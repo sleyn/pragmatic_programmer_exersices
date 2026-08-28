@@ -35,6 +35,26 @@ class TurtleState:
     def snapshot(self) -> TurtleState:
         return deepcopy(self)
 
+def move_turtle(command: str, value: str, turtle_state: TurtleState) -> tuple[int, int]:
+    int_value = int(value)
+    match command:
+        case "S":
+            x_new = turtle_state.cur_x
+            y_new = turtle_state.cur_y - turtle_state.step * int_value
+        case "N":
+            x_new = turtle_state.cur_x
+            y_new = turtle_state.cur_y + turtle_state.step * int_value
+        case "W":
+            x_new = turtle_state.cur_x - turtle_state.step * int_value
+            y_new = turtle_state.cur_y
+        case "E":
+            x_new = turtle_state.cur_x + turtle_state.step * int_value
+            y_new = turtle_state.cur_y
+        case _:
+            raise ValueError(f"Unsupported movement command: {command}")
+    return x_new, y_new
+
+
 class TurtlePlot():
     def __init__(
             self,
@@ -51,32 +71,9 @@ class TurtlePlot():
         if not turtle_state.cur_pen.pen_up:
             self.update_plot(turtle_state.cur_x, turtle_state.cur_y)
 
-    def add_step(self, command: str, value: str, turtle_state: TurtleState) -> tuple[int, int]:
-        int_value = int(value)
-        match command:
-            case "S":
-                x_new = turtle_state.cur_x
-                y_new = turtle_state.cur_y - turtle_state.step * int_value
-            case "N":
-                x_new = turtle_state.cur_x
-                y_new = turtle_state.cur_y + turtle_state.step * int_value
-            case "W":
-                x_new = turtle_state.cur_x - turtle_state.step * int_value
-                y_new = turtle_state.cur_y
-            case "E":
-                x_new = turtle_state.cur_x + turtle_state.step * int_value
-                y_new = turtle_state.cur_y
-            case _:
-                raise ValueError(f"Unsupported movement command: {command}")
-        self.move_turtle(x_new, y_new, turtle_state.cur_pen.pen_up)
-        return x_new, y_new
-
-    def move_turtle(self, x_new, y_new, is_pen_up) -> None:
+    def draw_turtle(self, x_new, y_new, is_pen_up) -> None:
         if not is_pen_up:
             self.update_plot(x_new, y_new)
-
-    def last_turtle_position(self) -> tuple[int, int]:
-        return self.x_points[-1], self.y_points[-1]
 
     def update_plot(self, x_new, y_new) -> None:
         self.x_points.append(x_new)
@@ -92,7 +89,9 @@ class TurtlePlot():
 def create_new_turtleplot(turtle_plots: list[TurtlePlot], turtle_state: TurtleState, previous_state: TurtleState|None) -> bool:
     add_plot = False
     if turtle_state.cur_pen.pen_up == False:
-        if turtle_state.cur_pen.pen_type != turtle_plots[-1].pen_type:
+        if len(turtle_plots) == 0:
+            add_plot = True
+        elif turtle_state.cur_pen.pen_type != turtle_plots[-1].pen_type:
             add_plot = True
         elif previous_state is not None and previous_state.cur_pen.pen_up:
             add_plot = True
@@ -131,7 +130,9 @@ def turtle_action(parts: list, turtle_plots: list[TurtlePlot], turtle_state: Tur
         case "E" | "W" | "N" | "S":
             if not is_input_valid(parts, 2): return True
             create_new_turtleplot(turtle_plots, turtle_state, None)
-            turtle_state.cur_x, turtle_state.cur_y = turtle_plots[-1].add_step(parts[0], parts[1], turtle_state)
+            turtle_state.cur_x, turtle_state.cur_y = move_turtle(parts[0], parts[1], turtle_state)
+            if not turtle_state.cur_pen.pen_up:
+                turtle_plots[-1].draw_turtle(turtle_state.cur_x, turtle_state.cur_y, turtle_state.cur_pen.pen_up)
         case "P":
             if not is_input_valid(parts, 2): return True
             turtle_state.cur_pen.update_pen_type(parts[1])
@@ -153,7 +154,7 @@ if __name__ == "__main__":
         cur_pen=Pen(pen_up=True, pen_type="0"),
         step=10
     )
-    turtle_plots: list[TurtlePlot]  = [TurtlePlot(turtle_state)]
+    turtle_plots: list[TurtlePlot]  = []
 
     continue_loop = True
 
