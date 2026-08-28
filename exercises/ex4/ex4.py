@@ -45,17 +45,19 @@ class TurtlePlot():
         if not is_pen_up:
             self.update_plot(x_update, y_update)
         return self.x_points[-1] + x_update, self.y_points[-1] + y_update
-            
 
-    def update_plot(self, x_update, y_update):
+    def last_turtle_position(self) -> tuple[int, int]:
+        return self.x_points[-1], self.y_points[-1]
+
+    def update_plot(self, x_update, y_update) -> None:
         self.x_points.append(self.x_points[-1] + x_update)
         self.y_points.append(self.y_points[-1] + y_update)
 
-    def select_pen(self, pen_type: str):
+    def select_pen(self, pen_type: str) -> None:
         """Solid, Dashed, Dash-dot, Dotted"""
         self.pen_type = ["-", "--", "-.", ":"][int(pen_type)]
 
-    def plot(self):
+    def plot(self) -> None:
         plt.plot(
             self.x_points, self.y_points,
             ls=self.pen_type,
@@ -92,8 +94,7 @@ if __name__ == "__main__":
         if parts[0] in ("D", "U"):
             pen_up = parts[0] == "U"
             if parts[0] == "U" and len(turtle_plots) > 0:
-                cur_x = turtle_plots[-1].x_points[-1]
-                cur_y = turtle_plots[-1].y_points[-1]
+                cur_x, cur_y = turtle_plots[-1].last_turtle_position()
             if parts[0] == "D":
                 turtle_plots.append(TurtlePlot(x_start=cur_x, y_start=cur_y, pen_type=current_pen))
 
